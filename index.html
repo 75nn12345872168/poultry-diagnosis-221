@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>تشخيص أمراض الدواجن</title>
+<meta name="theme-color" content="#2E5339">
+<meta name="description" content="تطبيق للتشخيص المبدئي لأمراض الدواجن من الصور - يعمل بدون إنترنت">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --primary: #2E5339;
+    --primary-dark: #1E3A26;
+    --accent: #D4A017;
+    --bg: #F7F5F0;
+    --card-bg: #FFFFFF;
+    --text: #22281F;
+    --text-muted: #6B7566;
+    --danger: #B3261E;
+    --warning: #C77D00;
+    --success: #2E7D32;
+    --border: #E2E0D8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Cairo", Tahoma, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+  header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 20px 16px 24px;
+    text-align: center;
+    border-radius: 0 0 20px 20px;
+  }
+  header h1 { margin: 0; font-size: 1.3rem; font-weight: 700; }
+  header p { margin: 6px 0 0; font-size: 0.85rem; opacity: 0.85; }
+
+  main { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+
+  #model-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
+  .dot.ready { background: var(--success); }
+  .dot.error { background: var(--danger); }
+
+  #image-preview-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #EDEBE3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    border: 2px dashed var(--border);
+  }
+  #image-preview-wrap.has-image { border-style: solid; }
+  #image-preview { width: 100%; height: 100%; object-fit: cover; display: none; }
+  #placeholder-icon { font-size: 3rem; opacity: 0.35; }
+
+  .btn-row { display: flex; gap: 10px; }
+  button {
+    font-family: inherit;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-secondary { background: #EDEBE3; color: var(--text); }
+  .btn-diagnose {
+    width: 100%;
+    background: var(--accent);
+    color: #2A1F00;
+    margin-top: 14px;
+    padding: 15px;
+    font-size: 1.02rem;
+  }
+
+  input[type="file"] { display: none; }
+
+  #result-card { display: none; }
+  #result-card.visible { display: block; }
+
+  .result-badge {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  .badge-disease { background: #FBE9E7; color: var(--danger); }
+  .badge-healthy { background: #E6F4EA; color: var(--success); }
+  .badge-unclear { background: #FFF3CD; color: var(--warning); }
+
+  .confidence-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .confidence-bar-bg { flex: 1; height: 8px; background: #EDEBE3; border-radius: 4px; overflow: hidden; }
+  .confidence-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
+  .confidence-label { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
+
+  .explanation { font-size: 0.92rem; line-height: 1.6; color: var(--text); margin-bottom: 12px; }
+
+  .prob-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .prob-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+  .prob-item .name { width: 90px; color: var(--text-muted); flex-shrink: 0; }
+  .prob-item .bar-bg { flex: 1; height: 6px; background: #EDEBE3; border-radius: 3px; overflow: hidden; }
+  .prob-item .bar-fill { height: 100%; background: var(--primary); border-radius: 3px; }
+  .prob-item .pct { width: 40px; text-align: left; color: var(--text-muted); }
+
+  .disclaimer {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: #FFF8E1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+
+  #install-banner {
+    display: none;
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  #install-banner.visible { display: flex; }
+  #install-banner button { flex: none; background: white; color: var(--primary); padding: 8px 14px; font-size: 0.82rem; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 20px; line-height: 1.8; }
+
+  .model-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
+
+  .urgent-card { background: #FDECEA; border: 1px solid #F3B4AE; }
+  .urgent-title { font-weight: 700; font-size: 0.88rem; color: var(--danger); margin-bottom: 8px; }
+  .urgent-list { margin: 0 0 8px; padding-inline-start: 20px; font-size: 0.82rem; color: var(--text); line-height: 1.7; }
+  .urgent-note { font-size: 0.76rem; color: var(--text-muted); }
+
+  .tta-note { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+
+  .feedback-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .feedback-label { font-size: 0.82rem; color: var(--text-muted); display: block; margin-bottom: 8px; }
+  .feedback-btns { display: flex; gap: 8px; }
+  .fb-btn { flex: 1; padding: 9px; font-size: 0.82rem; border-radius: 10px; background: #EDEBE3; color: var(--text); }
+  .fb-btn.selected.fb-yes { background: var(--success); color: white; }
+  .fb-btn.selected.fb-no { background: var(--danger); color: white; }
+  .feedback-thanks { font-size: 0.76rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
+  .fb-export { display: block; margin-top: 6px; background: #EDEBE3; color: var(--text); padding: 6px 10px; font-size: 0.72rem; border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🐔 تشخيص أمراض الدواجن</h1>
+  <p>تشخيص مبدئي من الصورة — يعمل بدون إنترنت</p>
+</header>
+
+<main>
+  <div id="install-banner">
+    <span>ثبّت التطبيق على هاتفك للوصول السريع</span>
+    <button id="install-btn">تثبيت</button>
+  </div>
+
+  <div class="card">
+    <div id="model-status">
+      <span class="dot" id="status-dot"></span>
+      <span id="status-text">جاري تحميل النموذج...</span>
+    </div>
+    <div id="model-meta" class="model-meta"></div>
+  </div>
+
+  <div class="card urgent-card">
+    <div class="urgent-title">🚨 اتصل بطبيب بيطري فوراً بغض النظر عن نتيجة التطبيق إذا لاحظت:</div>
+    <ul class="urgent-list">
+      <li>نفوق مفاجئ أو جماعي في القطيع</li>
+      <li>إسهال دموي حاد</li>
+      <li>أعراض عصبية (التواء الرقبة، فقدان التوازن، تشنجات)</li>
+      <li>صعوبة تنفس شديدة أو زُراق (لون مزرقّ) في العرف/الوجه</li>
+    </ul>
+    <div class="urgent-note">هذا التطبيق أداة فرز أولي فقط، ولا يغني عن هذه الحالات عن التدخل البيطري العاجل.</div>
+  </div>
+
+  <div class="card">
+    <div id="image-preview-wrap">
+      <span id="placeholder-icon">📷</span>
+      <img id="image-preview" alt="الصورة المختارة">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="camera-btn">📸 التقاط صورة</button>
+      <button class="btn-secondary" id="gallery-btn">🖼️ من المعرض</button>
+    </div>
+    <input type="file" id="camera-input" accept="image/*" capture="environment">
+    <input type="file" id="gallery-input" accept="image/*">
+
+    <button class="btn-diagnose" id="diagnose-btn" disabled>حدد صورة أولاً</button>
+  </div>
+
+  <div class="card" id="result-card">
+    <div id="result-badge" class="result-badge"></div>
+
+    <div class="confidence-row">
+      <span class="confidence-label">مستوى الثقة</span>
+      <div class="confidence-bar-bg"><div class="confidence-bar-fill" id="confidence-fill"></div></div>
+      <span class="confidence-label" id="confidence-pct"></span>
+    </div>
+
+    <div class="explanation" id="explanation-text"></div>
+
+    <div class="prob-list" id="prob-list"></div>
+
+    <div class="tta-note" id="tta-note"></div>
+
+    <div class="disclaimer">
+      ⚠️ هذا تشخيص مبدئي بالذكاء الاصطناعي وليس بديلاً عن الفحص البيطري. في حال استمرار الأعراض أو الحالات الحرجة، يرجى استشارة طبيب بيطري. نسبة الثقة المعروضة مُعايَرة إحصائياً لكنها تبقى تقديراً، وليست يقيناً مطلقاً.
+    </div>
+
+    <div class="feedback-row">
+      <span class="feedback-label">هل كانت هذه النتيجة صحيحة في تقديرك؟</span>
+      <div class="feedback-btns">
+        <button class="fb-btn fb-yes" id="fb-yes">👍 صحيحة</button>
+        <button class="fb-btn fb-no" id="fb-no">👎 غير صحيحة</button>
+      </div>
+      <div class="feedback-thanks" id="feedback-thanks" style="display:none;">
+        شكراً — تم حفظ ملاحظتك محلياً لمراجعتها لاحقاً (لا تُرسل لأي سيرفر).
+        <button class="fb-export" id="fb-export">تصدير كل الملاحظات (JSON)</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    يعمل بالكامل على جهازك — لا تُرسل أي صورة إلى الإنترنت<br>
+    <span id="model-version-footer"></span>
+  </footer>
+</main>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
