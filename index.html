@@ -4,259 +4,862 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>تشخيص أمراض الدواجن</title>
-<meta name="theme-color" content="#2E5339">
+<meta name="theme-color" content="#1B5E20">
 <meta name="description" content="تطبيق للتشخيص المبدئي لأمراض الدواجن من الصور - يعمل بدون إنترنت">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --primary: #2E5339;
-    --primary-dark: #1E3A26;
-    --accent: #D4A017;
-    --bg: #F7F5F0;
+    --primary: #1B5E20;
+    --primary-light: #4C8C4A;
+    --primary-dark: #0D3D12;
+    --accent: #2E7D32;
+    --accent-light: #60AD5E;
+    --bg: #F8FAF8;
     --card-bg: #FFFFFF;
-    --text: #22281F;
-    --text-muted: #6B7566;
-    --danger: #B3261E;
-    --warning: #C77D00;
-    --success: #2E7D32;
-    --border: #E2E0D8;
+    --text: #1A1A1A;
+    --text-secondary: #5F6368;
+    --text-muted: #9AA0A6;
+    --danger: #D93025;
+    --danger-light: #FDECEA;
+    --warning: #F9AB00;
+    --warning-light: #FEF7E0;
+    --success: #1E8E3E;
+    --success-light: #E6F4EA;
+    --border: #E8EAED;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
   }
-  * { box-sizing: border-box; }
+  
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Cairo", Tahoma, sans-serif;
+    font-family: 'Cairo', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    padding-bottom: 40px;
+    padding-bottom: 60px;
+    line-height: 1.6;
   }
+  
+  /* Header */
   header {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
-    padding: 20px 16px 24px;
+    padding: 28px 20px 32px;
     text-align: center;
-    border-radius: 0 0 20px 20px;
-  }
-  header h1 { margin: 0; font-size: 1.3rem; font-weight: 700; }
-  header p { margin: 6px 0 0; font-size: 0.85rem; opacity: 0.85; }
-
-  main { max-width: 480px; margin: 0 auto; padding: 16px; }
-
-  .card {
-    background: var(--card-bg);
-    border-radius: 16px;
-    padding: 18px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    border: 1px solid var(--border);
-  }
-
-  #model-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
-  .dot.ready { background: var(--success); }
-  .dot.error { background: var(--danger); }
-
-  #image-preview-wrap {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 12px;
+    position: relative;
     overflow: hidden;
-    background: #EDEBE3;
+  }
+  
+  header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  
+  @keyframes shimmer {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+  }
+  
+  header .header-content {
+    position: relative;
+    z-index: 1;
+  }
+  
+  header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 14px;
-    border: 2px dashed var(--border);
+    gap: 10px;
   }
-  #image-preview-wrap.has-image { border-style: solid; }
-  #image-preview { width: 100%; height: 100%; object-fit: cover; display: none; }
-  #placeholder-icon { font-size: 3rem; opacity: 0.35; }
-
-  .btn-row { display: flex; gap: 10px; }
+  
+  header h1 .logo-icon {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  }
+  
+  header p {
+    margin: 8px 0 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+  
+  /* Status Badges in Header */
+  .status-badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+  }
+  
+  .status-badge svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  main { max-width: 520px; margin: 0 auto; padding: 20px 16px; }
+  
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .card:hover {
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Model Status Card */
+  #model-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: 8px 0;
+  }
+  
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--warning);
+    flex-shrink: 0;
+    position: relative;
+  }
+  
+  .status-dot::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: inherit;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    50% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+  }
+  
+  .status-dot.ready { background: var(--success); }
+  .status-dot.ready::after { background: var(--success); }
+  .status-dot.error { background: var(--danger); }
+  .status-dot.error::after { background: var(--danger); }
+  
+  .model-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  
+  /* Urgent Alert Card */
+  .urgent-card {
+    background: linear-gradient(135deg, var(--danger-light) 0%, #FFF5F5 100%);
+    border: 1px solid #F3B4AE;
+  }
+  
+  .urgent-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--danger);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .urgent-list {
+    margin: 0 0 10px;
+    padding-inline-start: 20px;
+    font-size: 0.82rem;
+    color: var(--text);
+    line-height: 1.8;
+  }
+  
+  .urgent-list li {
+    margin-bottom: 4px;
+  }
+  
+  .urgent-note {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(217, 48, 37, 0.3);
+  }
+  
+  /* Image Upload Card */
+  .upload-card {
+    text-align: center;
+  }
+  
+  #image-preview-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: linear-gradient(135deg, #F1F3F4 0%, #E8EAED 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    border: 2px dashed var(--border);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  #image-preview-wrap.has-image {
+    border-style: solid;
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+  }
+  
+  #image-preview-wrap.drag-over {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+    transform: scale(1.02);
+  }
+  
+  #image-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  #placeholder-icon {
+    font-size: 3.5rem;
+    opacity: 0.4;
+    transition: all 0.3s;
+  }
+  
+  #image-preview-wrap.has-image #placeholder-icon {
+    display: none;
+  }
+  
+  .upload-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  
   button {
     font-family: inherit;
     border: none;
-    border-radius: 12px;
-    padding: 13px 16px;
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    flex: 1;
-    transition: opacity 0.15s, transform 0.1s;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
   }
-  button:active { transform: scale(0.98); }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .btn-primary { background: var(--primary); color: white; }
-  .btn-secondary { background: #EDEBE3; color: var(--text); }
+  
+  button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  button:hover::before {
+    left: 100%;
+  }
+  
+  button:active {
+    transform: scale(0.97);
+  }
+  
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(27, 94, 32, 0.3);
+  }
+  
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 4px 8px rgba(27, 94, 32, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  .btn-secondary {
+    background: #F1F3F4;
+    color: var(--text);
+  }
+  
+  .btn-secondary:hover:not(:disabled) {
+    background: #E8EAED;
+  }
+  
   .btn-diagnose {
     width: 100%;
-    background: var(--accent);
-    color: #2A1F00;
-    margin-top: 14px;
-    padding: 15px;
-    font-size: 1.02rem;
-  }
-
-  input[type="file"] { display: none; }
-
-  #result-card { display: none; }
-  #result-card.visible { display: block; }
-
-  .result-badge {
-    display: inline-block;
-    padding: 5px 14px;
-    border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    color: white;
+    margin-top: 8px;
+    padding: 16px;
+    font-size: 1.05rem;
     font-weight: 700;
-    font-size: 1rem;
-    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.35);
   }
-  .badge-disease { background: #FBE9E7; color: var(--danger); }
-  .badge-healthy { background: #E6F4EA; color: var(--success); }
-  .badge-unclear { background: #FFF3CD; color: var(--warning); }
-
-  .confidence-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-  .confidence-bar-bg { flex: 1; height: 8px; background: #EDEBE3; border-radius: 4px; overflow: hidden; }
-  .confidence-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s; }
-  .confidence-label { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
-
-  .explanation { font-size: 0.92rem; line-height: 1.6; color: var(--text); margin-bottom: 12px; }
-
-  .prob-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-  .prob-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
-  .prob-item .name { width: 90px; color: var(--text-muted); flex-shrink: 0; }
-  .prob-item .bar-bg { flex: 1; height: 6px; background: #EDEBE3; border-radius: 3px; overflow: hidden; }
-  .prob-item .bar-fill { height: 100%; background: var(--primary); border-radius: 3px; }
-  .prob-item .pct { width: 40px; text-align: left; color: var(--text-muted); }
-
+  
+  .btn-diagnose:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(46, 125, 50, 0.45);
+    transform: translateY(-2px);
+  }
+  
+  input[type="file"] { display: none; }
+  
+  /* Result Card */
+  #result-card {
+    display: none;
+    animation: slideUp 0.5s ease;
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  #result-card.visible {
+    display: block;
+  }
+  
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .result-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  
+  .result-icon.disease {
+    background: var(--danger-light);
+  }
+  
+  .result-icon.healthy {
+    background: var(--success-light);
+  }
+  
+  .result-icon.unclear {
+    background: var(--warning-light);
+  }
+  
+  .result-title {
+    flex: 1;
+  }
+  
+  .result-title h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  
+  .result-title p {
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  
+  .confidence-section {
+    background: #F8F9FA;
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  
+  .confidence-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  
+  .confidence-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  
+  .confidence-bar-bg {
+    flex: 1;
+    height: 10px;
+    background: #E8EAED;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  
+  .confidence-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .confidence-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmerBar 2s infinite;
+  }
+  
+  @keyframes shimmerBar {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  .confidence-pct {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+    min-width: 70px;
+    text-align: left;
+  }
+  
+  .explanation {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 16px;
+    padding: 14px;
+    background: #F8F9FA;
+    border-radius: var(--radius-md);
+    border-right: 3px solid var(--primary);
+  }
+  
+  .prob-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  
+  .prob-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+  }
+  
+  .prob-item .name {
+    min-width: 100px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+  
+  .prob-item .bar-bg {
+    flex: 1;
+    height: 8px;
+    background: #E8EAED;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .prob-item .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  
+  .prob-item .pct {
+    min-width: 45px;
+    text-align: left;
+    color: var(--text);
+    font-weight: 600;
+  }
+  
   .disclaimer {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: var(--warning-light);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin-top: 16px;
+    line-height: 1.6;
+    border: 1px solid rgba(249, 171, 0, 0.3);
+  }
+  
+  .tta-note {
     font-size: 0.78rem;
     color: var(--text-muted);
-    background: #FFF8E1;
-    border-radius: 10px;
-    padding: 10px 12px;
-    margin-top: 14px;
-    line-height: 1.5;
-  }
-
-  #install-banner {
-    display: none;
-    background: var(--primary);
-    color: white;
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 16px;
-    font-size: 0.85rem;
+    margin-bottom: 8px;
+    display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 6px;
+  }
+  
+  /* Feedback Section */
+  .feedback-row {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .feedback-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  
+  .feedback-btns {
+    display: flex;
     gap: 10px;
   }
-  #install-banner.visible { display: flex; }
-  #install-banner button { flex: none; background: white; color: var(--primary); padding: 8px 14px; font-size: 0.82rem; }
-
+  
+  .fb-btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 0.88rem;
+    border-radius: var(--radius-md);
+    background: #F1F3F4;
+    color: var(--text);
+    font-weight: 600;
+  }
+  
+  .fb-btn.selected.fb-yes {
+    background: var(--success);
+    color: white;
+    box-shadow: 0 2px 8px rgba(30, 142, 62, 0.4);
+  }
+  
+  .fb-btn.selected.fb-no {
+    background: var(--danger);
+    color: white;
+    box-shadow: 0 2px 8px rgba(217, 48, 37, 0.4);
+  }
+  
+  .feedback-thanks {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    line-height: 1.6;
+    padding: 12px;
+    background: var(--success-light);
+    border-radius: var(--radius-md);
+  }
+  
+  .fb-export {
+    display: block;
+    margin-top: 10px;
+    background: white;
+    color: var(--primary);
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    width: 100%;
+  }
+  
+  /* Install Banner */
+  #install-banner {
+    display: none;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: var(--shadow-md);
+    animation: slideDown 0.4s ease;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  #install-banner.visible {
+    display: flex;
+  }
+  
+  #install-banner button {
+    flex: none;
+    background: white;
+    color: var(--primary);
+    padding: 10px 18px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  
+  /* Spinner */
   .spinner {
-    width: 18px; height: 18px;
+    width: 20px;
+    height: 20px;
     border: 2.5px solid rgba(255,255,255,0.4);
     border-top-color: white;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     display: inline-block;
     vertical-align: middle;
-    margin-left: 8px;
+    margin-right: 8px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  footer { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 20px; line-height: 1.8; }
-
-  .model-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
-
-  .urgent-card { background: #FDECEA; border: 1px solid #F3B4AE; }
-  .urgent-title { font-weight: 700; font-size: 0.88rem; color: var(--danger); margin-bottom: 8px; }
-  .urgent-list { margin: 0 0 8px; padding-inline-start: 20px; font-size: 0.82rem; color: var(--text); line-height: 1.7; }
-  .urgent-note { font-size: 0.76rem; color: var(--text-muted); }
-
-  .tta-note { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
-
-  .feedback-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
-  .feedback-label { font-size: 0.82rem; color: var(--text-muted); display: block; margin-bottom: 8px; }
-  .feedback-btns { display: flex; gap: 8px; }
-  .fb-btn { flex: 1; padding: 9px; font-size: 0.82rem; border-radius: 10px; background: #EDEBE3; color: var(--text); }
-  .fb-btn.selected.fb-yes { background: var(--success); color: white; }
-  .fb-btn.selected.fb-no { background: var(--danger); color: white; }
-  .feedback-thanks { font-size: 0.76rem; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
-  .fb-export { display: block; margin-top: 6px; background: #EDEBE3; color: var(--text); padding: 6px 10px; font-size: 0.72rem; border-radius: 8px; }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Footer */
+  footer {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 30px;
+    line-height: 1.8;
+    padding: 20px;
+    border-top: 1px solid var(--border);
+  }
+  
+  /* Skeleton Loading */
+  .skeleton {
+    background: linear-gradient(90deg, #F1F3F4 25%, #E8EAED 50%, #F1F3F4 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+  }
+  
+  @keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  
+  /* Responsive */
+  @media (max-width: 480px) {
+    header {
+      padding: 24px 16px 28px;
+    }
+    
+    header h1 {
+      font-size: 1.3rem;
+    }
+    
+    main {
+      padding: 16px 14px;
+    }
+    
+    .card {
+      padding: 18px;
+    }
+    
+    .btn-row {
+      flex-direction: column;
+    }
+    
+    .btn-row button {
+      width: 100%;
+    }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>🐔 تشخيص أمراض الدواجن</h1>
-  <p>تشخيص مبدئي من الصورة — يعمل بدون إنترنت</p>
+  <div class="header-content">
+    <h1><span class="logo-icon">🐔</span> تشخيص أمراض الدواجن</h1>
+    <p>تشخيص مبدئي بالذكاء الاصطناعي — يعمل بدون إنترنت</p>
+    <div class="status-badges">
+      <span class="status-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+        يعمل دون اتصال
+      </span>
+      <span class="status-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        تحليل فوري
+      </span>
+      <span class="status-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        آمن تماماً
+      </span>
+    </div>
+  </div>
 </header>
 
 <main>
   <div id="install-banner">
-    <span>ثبّت التطبيق على هاتفك للوصول السريع</span>
+    <span>📱 ثبّت التطبيق على هاتفك للوصول السريع واستخدامه بدون إنترنت</span>
     <button id="install-btn">تثبيت</button>
   </div>
 
   <div class="card">
     <div id="model-status">
-      <span class="dot" id="status-dot"></span>
-      <span id="status-text">جاري تحميل النموذج...</span>
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">جاري تحميل نموذج الذكاء الاصطناعي...</span>
     </div>
     <div id="model-meta" class="model-meta"></div>
   </div>
 
   <div class="card urgent-card">
-    <div class="urgent-title">🚨 اتصل بطبيب بيطري فوراً بغض النظر عن نتيجة التطبيق إذا لاحظت:</div>
+    <div class="urgent-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      اتصل بطبيب بيطري فوراً إذا لاحظت:
+    </div>
     <ul class="urgent-list">
       <li>نفوق مفاجئ أو جماعي في القطيع</li>
       <li>إسهال دموي حاد</li>
       <li>أعراض عصبية (التواء الرقبة، فقدان التوازن، تشنجات)</li>
-      <li>صعوبة تنفس شديدة أو زُراق (لون مزرقّ) في العرف/الوجه</li>
+      <li>صعوبة تنفس شديدة أو زُراق في العرف/الوجه</li>
     </ul>
-    <div class="urgent-note">هذا التطبيق أداة فرز أولي فقط، ولا يغني عن هذه الحالات عن التدخل البيطري العاجل.</div>
+    <div class="urgent-note">هذا التطبيق أداة فرز أولي فقط، ولا يغني عن التدخل البيطري العاجل في الحالات الحرجة.</div>
   </div>
 
-  <div class="card">
+  <div class="card upload-card">
     <div id="image-preview-wrap">
       <span id="placeholder-icon">📷</span>
       <img id="image-preview" alt="الصورة المختارة">
     </div>
+    <p class="upload-hint">اسحب الصورة وأفلتها هنا، أو استخدم الأزرار أدناه</p>
 
     <div class="btn-row">
-      <button class="btn-primary" id="camera-btn">📸 التقاط صورة</button>
-      <button class="btn-secondary" id="gallery-btn">🖼️ من المعرض</button>
+      <button class="btn-primary" id="camera-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        التقاط صورة
+      </button>
+      <button class="btn-secondary" id="gallery-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        من المعرض
+      </button>
     </div>
     <input type="file" id="camera-input" accept="image/*" capture="environment">
     <input type="file" id="gallery-input" accept="image/*">
 
-    <button class="btn-diagnose" id="diagnose-btn" disabled>حدد صورة أولاً</button>
+    <button class="btn-diagnose" id="diagnose-btn" disabled>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      حدد صورة أولاً
+    </button>
   </div>
 
   <div class="card" id="result-card">
-    <div id="result-badge" class="result-badge"></div>
+    <div class="result-header">
+      <div class="result-icon" id="result-icon">🔍</div>
+      <div class="result-title">
+        <h3 id="result-title-text">نتيجة التحليل</h3>
+        <p id="result-subtitle-text">بناءً على تحليل الذكاء الاصطناعي</p>
+      </div>
+    </div>
 
-    <div class="confidence-row">
-      <span class="confidence-label">مستوى الثقة</span>
-      <div class="confidence-bar-bg"><div class="confidence-bar-fill" id="confidence-fill"></div></div>
-      <span class="confidence-label" id="confidence-pct"></span>
+    <div class="confidence-section">
+      <div class="confidence-row">
+        <span class="confidence-label">مستوى الثقة</span>
+        <div class="confidence-bar-bg"><div class="confidence-bar-fill" id="confidence-fill"></div></div>
+        <span class="confidence-pct" id="confidence-pct"></span>
+      </div>
     </div>
 
     <div class="explanation" id="explanation-text"></div>
 
-    <div class="prob-list" id="prob-list"></div>
+    <div class="tta-note" id="tta-note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      <span></span>
+    </div>
 
-    <div class="tta-note" id="tta-note"></div>
+    <div class="prob-list" id="prob-list"></div>
 
     <div class="disclaimer">
       ⚠️ هذا تشخيص مبدئي بالذكاء الاصطناعي وليس بديلاً عن الفحص البيطري. في حال استمرار الأعراض أو الحالات الحرجة، يرجى استشارة طبيب بيطري. نسبة الثقة المعروضة مُعايَرة إحصائياً لكنها تبقى تقديراً، وليست يقيناً مطلقاً.

@@ -55,6 +55,10 @@ const statusText = document.getElementById("status-text");
 const modelMeta = document.getElementById("model-meta");
 const modelVersionFooter = document.getElementById("model-version-footer");
 const diagnoseBtn = document.getElementById("diagnose-btn");
+const resultIcon = document.getElementById("result-icon");
+const resultTitleText = document.getElementById("result-title-text");
+const resultSubtitleText = document.getElementById("result-subtitle-text");
+const ttaNoteSpan = document.querySelector("#tta-note span");
 
 async function loadConfig() {
   try {
@@ -279,39 +283,59 @@ diagnoseBtn.addEventListener("click", async () => {
 
 function displayResult(predictedClass, confidence, allProbs, noveltyRejected = false) {
   const resultCard = document.getElementById("result-card");
-  const badge = document.getElementById("result-badge");
   const confFill = document.getElementById("confidence-fill");
   const confPct = document.getElementById("confidence-pct");
   const explanationText = document.getElementById("explanation-text");
   const probList = document.getElementById("prob-list");
-  const ttaNote = document.getElementById("tta-note");
 
   const isOther = predictedClass === "Other";
   const isLowConfidence = !isOther && confidence < CONFIDENCE_THRESHOLD;
   const isInconclusive = isOther || isLowConfidence;
   const isHealthy = predictedClass === "Healthy" && !isInconclusive;
 
+  // Set result icon and title based on diagnosis
+  let iconEmoji = "🔍";
+  let titleText = "نتيجة التحليل";
+  let subtitleText = "بناءً على تحليل الذكاء الاصطناعي";
+  let iconClass = "";
+
   if (isInconclusive) {
-    badge.textContent = isOther ? "غير متعلق بالدواجن" : "نتيجة غير واضحة";
-    badge.className = "result-badge badge-unclear";
-    if (noveltyRejected) {
-      explanationText.textContent =
-        "هذه الصورة بعيدة إحصائياً عن كل الحالات المعروفة لدى النموذج (بغض النظر عن أي احتمال أظهره). " +
-        "على الأرجح لا تحتوي على دجاجة أو فضلات بشكل واضح. يرجى التقاط صورة أقرب وأوضح تتضمن الطائر أو الفضلات مباشرة.";
-    } else {
-      explanationText.textContent = isOther
-        ? EXPLANATION_TEMPLATES.Other
-        : EXPLANATION_TEMPLATES.Inconclusive;
-    }
+    iconEmoji = "⚠️";
+    titleText = isOther ? "غير متعلق بالدواجن" : "نتيجة غير واضحة";
+    subtitleText = "يرجى إعادة التقاط الصورة بشكل أوضح";
+    iconClass = "unclear";
+  } else if (isHealthy) {
+    iconEmoji = "✅";
+    titleText = CLASS_NAMES_AR[predictedClass].split(" (")[0];
+    subtitleText = "لم يُلاحَظ نمط غير طبيعي";
+    iconClass = "healthy";
   } else {
-    badge.textContent = CLASS_NAMES_AR[predictedClass];
-    badge.className = "result-badge " + (isHealthy ? "badge-healthy" : "badge-disease");
+    iconEmoji = "🦠";
+    titleText = CLASS_NAMES_AR[predictedClass].split(" (")[0];
+    subtitleText = "تم اكتشاف نمط مرضي محتمل";
+    iconClass = "disease";
+  }
+
+  resultIcon.textContent = iconEmoji;
+  resultIcon.className = `result-icon ${iconClass}`;
+  resultTitleText.textContent = titleText;
+  resultSubtitleText.textContent = subtitleText;
+
+  // Set explanation text
+  if (noveltyRejected) {
+    explanationText.textContent =
+      "هذه الصورة بعيدة إحصائياً عن كل الحالات المعروفة لدى النموذج (بغض النظر عن أي احتمال أظهره). " +
+      "على الأرجح لا تحتوي على دجاجة أو فضلات بشكل واضح. يرجى التقاط صورة أقرب وأوضح تتضمن الطائر أو الفضلات مباشرة.";
+  } else if (isInconclusive) {
+    explanationText.textContent = isOther
+      ? EXPLANATION_TEMPLATES.Other
+      : EXPLANATION_TEMPLATES.Inconclusive;
+  } else {
     explanationText.textContent = EXPLANATION_TEMPLATES[predictedClass];
   }
 
+  // Set confidence bar
   if (noveltyRejected) {
-    // لا نعرض أي نسبة ثقة هنا: قرار الرفض مبني على مسافة إحصائية مستقلة عن الـ softmax،
-    // وعرض رقم "ثقة" بجانبه كان سيكون مضللاً (نسخة سابقة كانت تعرض 100% بالغلط).
     confFill.style.width = "0%";
     confPct.textContent = "قرار مستقل (بدون نسبة ثقة)";
   } else {
@@ -319,12 +343,23 @@ function displayResult(predictedClass, confidence, allProbs, noveltyRejected = f
     confFill.style.width = pct + "%";
     const { label } = confidenceLabel(confidence);
     confPct.textContent = `${label} (${pct}%)`;
+    
+    // Update confidence bar color based on level
+    if (pct >= 80) {
+      confFill.style.background = "var(--success)";
+    } else if (pct >= 55) {
+      confFill.style.background = "var(--warning)";
+    } else {
+      confFill.style.background = "var(--danger)";
+    }
   }
 
-  ttaNote.textContent = NOVELTY_GATE
-    ? "↻ النتيجة مبنية على متوسط 3 قراءات للصورة (TTA)، مع بوابة رفض إضافية مستقلة تتحقق من مدى قرب الصورة فعلياً من الحالات المعروفة."
-    : "↻ النتيجة مبنية على متوسط 3 قراءات للصورة (Test-Time Augmentation) لتقليل تأثير زاوية التصوير.";
+  // Update TTA note
+  ttaNoteSpan.textContent = NOVELTY_GATE
+    ? "النتيجة مبنية على متوسط 3 قراءات للصورة (TTA)، مع بوابة رفض إضافية مستقلة تتحقق من مدى قرب الصورة فعلياً من الحالات المعروفة."
+    : "النتيجة مبنية على متوسط 3 قراءات للصورة (Test-Time Augmentation) لتقليل تأثير زاوية التصوير.";
 
+  // Build probability list
   const sorted = CLASS_NAMES.map((cls, i) => ({ cls, prob: allProbs[i] })).sort((a, b) => b.prob - a.prob);
   probList.innerHTML = sorted
     .map(
